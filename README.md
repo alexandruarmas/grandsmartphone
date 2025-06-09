@@ -31,7 +31,7 @@ A modern, animated Next.js website for a smartphone repair and sales business.
 
 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/smartphone-store-homepage.git
+git clone https://github.com/alexandruarmas/grandsmartphone.git
 cd smartphone-store-homepage
 ```
 

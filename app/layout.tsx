@@ -1,9 +1,9 @@
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import { PageTransition } from "@/components/PageTransition"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -23,15 +23,14 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="ro" className={inter.variable}>
-      <body className="min-h-screen flex flex-col bg-white">
+    <html lang="ro">
+      <body>
         <Header />
-        <PageTransition>
-          <main className="flex-grow pt-16 md:pt-[70px]">
-            {children}
-          </main>
-        </PageTransition>
+        <main>
+          {children}
+        </main>
         <Footer />
+        <SpeedInsights />
       </body>
     </html>
   )

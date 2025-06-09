@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link"
 import { Phone, Recycle, Smartphone, Shield, Lightbulb, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
