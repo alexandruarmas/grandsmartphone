@@ -1,0 +1,194 @@
+"use client";
+
+import { useEffect, useRef, useState } from 'react';
+import gsap from 'gsap';
+import { usePathname } from 'next/navigation';
+import Image from 'next/image';
+
+interface PageTransitionProps {
+  children: React.ReactNode;
+}
+
+export function PageTransition({ children }: PageTransitionProps) {
+  const pageRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const gifContainerRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  const [transitioning, setTransitioning] = useState(false);
+
+  const animatePageTransition = (isInitial = false) => {
+    if (!pageRef.current) return () => {};
+    
+    const ctx = gsap.context(() => {
+      if (isInitial) {
+        // Initial page load animation
+        gsap.fromTo(
+          pageRef.current,
+          { opacity: 0 },
+          { 
+            opacity: 1,
+            duration: 0.2,
+            ease: "power3.out",
+            clearProps: "opacity"
+          }
+        );
+        
+        // Make sure GIF overlay is hidden initially
+        if (gifContainerRef.current) {
+          gsap.set(gifContainerRef.current, { opacity: 0, visibility: "hidden" });
+        }
+        
+        return;
+      }
+      
+      setTransitioning(true);
+      
+      // Create animation timeline
+      const tl = gsap.timeline({
+        onComplete: () => {
+          setTransitioning(false);
+          // Ensure GIF is hidden after animation completes (helps Safari)
+          if (gifContainerRef.current) {
+            gsap.set(gifContainerRef.current, { visibility: "hidden" });
+          }
+        }
+      });
+      
+      // Fade out current content
+      tl.to(pageRef.current, {
+        opacity: 0,
+        scale: 0.98, // Subtle scale for better Safari performance
+        duration: 0.1,
+        ease: "power2.in"
+      });
+      
+      // Show GIF with animation if available
+      if (gifContainerRef.current) {
+        // Get the inner GIF wrapper
+        const gifWrapper = gifContainerRef.current.querySelector('.transition-gif');
+        
+        // Show GIF container with visibility for Safari
+        tl.set(gifContainerRef.current, { visibility: "visible" })
+          .to(gifContainerRef.current, {
+            opacity: 1,
+            duration: 0.1,
+            ease: "power2.out"
+          });
+        
+        // Animate the GIF wrapper if it exists
+        if (gifWrapper) {
+          tl.fromTo(
+            gifWrapper,
+            {
+              scale: 0.9, // Less extreme for better mobile performance
+              rotation: -2  // Less extreme for better mobile performance
+            },
+            {
+              scale: 1,
+              rotation: 0,
+              duration: 0.25,
+              ease: "power2.out" // Changed from elastic for better cross-browser performance
+            },
+            "-=0.08"
+          )
+          .to(gifWrapper, {
+            scale: 1.05, // Reduced scale for better mobile performance
+            rotation: 2,   // Reduced rotation for better mobile performance
+            duration: 0.2,
+            yoyo: true,
+            repeat: 1,
+            ease: "power1.inOut"
+          });
+        }
+        
+        // Fade out GIF
+        tl.to(gifContainerRef.current, {
+          opacity: 0,
+          duration: 0.1,
+          ease: "power2.in"
+        });
+      }
+      
+      // Fade in new content
+      tl.fromTo(
+        pageRef.current,
+        {
+          opacity: 0,
+          scale: 1.02 // Subtle scale for better Safari performance
+        },
+        {
+          opacity: 1,
+          scale: 1,
+          duration: 0.15,
+          clearProps: "transform,opacity",
+          ease: "power2.out"
+        }
+      );
+    });
+    
+    return () => ctx.revert();
+  };
+  
+  // Initial page load animation
+  useEffect(() => {
+    const cleanup = animatePageTransition(true);
+    return cleanup;
+  }, []);
+
+  // Handle route changes
+  useEffect(() => {
+    if (transitioning) return; // Prevent animation overlap
+    
+    const timeout = setTimeout(() => {
+      const cleanup = animatePageTransition();
+      
+      return () => {
+        cleanup();
+        clearTimeout(timeout);
+      };
+    }, 10); // Slightly longer delay for better browser compatibility
+    
+    return () => clearTimeout(timeout);
+  }, [pathname]);
+
+  return (
+    <div ref={wrapperRef} className="w-full relative">
+      {/* GIF Overlay - with will-change for better performance */}
+      <div 
+        ref={gifContainerRef} 
+        className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center"
+        style={{ 
+          opacity: 0, 
+          visibility: "hidden", 
+          willChange: "opacity" 
+        }}
+      >
+        <div className="transition-gif relative w-full h-full" style={{ willChange: "transform" }}>
+          <Image
+            src="/gif.gif" 
+            alt="Transition"
+            fill
+            style={{ 
+              objectFit: 'cover', 
+              objectPosition: 'center',
+              maxWidth: '100%',
+              maxHeight: '100vh'
+            }}
+            priority
+            sizes="100vw"
+            quality={80} // Reduce quality slightly for better mobile performance
+          />
+        </div>
+      </div>
+      
+      {/* Main content */}
+      <div 
+        ref={pageRef} 
+        className="w-full"
+        style={{ willChange: "opacity, transform" }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+} 
