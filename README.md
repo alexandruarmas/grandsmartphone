@@ -106,4 +106,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - GSAP by GreenSock for the animation library
 - shadcn/ui for accessible component templates
-- Lucide for the beautiful icons 
+- Lucide for the beautiful icons  
